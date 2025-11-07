@@ -15,17 +15,19 @@ commands:
       - run:
           name: Setup pnpm
           command: |
-            # Set custom pnpm path to avoid permission issues
+            # Set shell and pnpm environment
+            export SHELL=/bin/bash
             export PNPM_HOME="$HOME/.local/share/pnpm"
             export PATH="$PNPM_HOME:$PATH"
+            echo "export SHELL=/bin/bash" >> $BASH_ENV
             echo "export PNPM_HOME=\"$HOME/.local/share/pnpm\"" >> $BASH_ENV
             echo "export PATH=\"\$PNPM_HOME:\$PATH\"" >> $BASH_ENV
             
             # Create pnpm directory
             mkdir -p $PNPM_HOME
             
-            # Install pnpm directly without corepack
-            curl -fsSL https://get.pnpm.io/install.sh | sh -
+            # Install pnpm with shell environment
+            SHELL=/bin/bash curl -fsSL https://get.pnpm.io/install.sh | bash -
             
             # Verify installation
             $PNPM_HOME/pnpm --version
