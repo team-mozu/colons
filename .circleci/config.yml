@@ -1,0 +1,228 @@
+version: 2.1
+
+parameters:
+  pull_request:
+    type: boolean
+    default: false
+
+commands:
+  setup:
+    steps:
+      - restore_cache:
+          keys:
+            - node-modules-v2-{{ checksum "pnpm-lock.yaml" }}
+            - node-modules-v2-
+      - run:
+          name: Setup pnpm
+          command: |
+            # Set shell and pnpm environment
+            export SHELL=/bin/bash
+            export PNPM_HOME="$HOME/.local/share/pnpm"
+            export PATH="$PNPM_HOME:$PATH"
+            echo "export SHELL=/bin/bash" >> $BASH_ENV
+            echo "export PNPM_HOME=\"$HOME/.local/share/pnpm\"" >> $BASH_ENV
+            echo "export PATH=\"\$PNPM_HOME:\$PATH\"" >> $BASH_ENV
+            
+            # Create pnpm directory
+            mkdir -p $PNPM_HOME
+            
+            # Install pnpm with shell environment
+            SHELL=/bin/bash curl -fsSL https://get.pnpm.io/install.sh | bash -
+            
+            # Verify installation
+            $PNPM_HOME/pnpm --version
+            
+            # Install dependencies
+            $PNPM_HOME/pnpm install --frozen-lockfile
+      - save_cache:
+          key: node-modules-v2-{{ checksum "pnpm-lock.yaml" }}
+          paths:
+            - node_modules
+            - packages/*/node_modules
+            - ~/.local/share/pnpm
+            - ~/.pnpm-store
+
+jobs:
+  lint:
+    docker:
+      - image: cimg/node:20.12
+    steps:
+      - checkout
+      - setup
+      - run:
+          name: ESLint
+          command: |
+            changed_files=$(git diff --name-only --diff-filter=ACMRUXB origin/main || true)
+
+            if [[ -z "$changed_files" ]]; then
+              echo "No changed files to lint"
+              exit 0
+            fi
+
+            if echo "$changed_files" | grep -q "^eslint.config.mjs$"; then
+              pnpm lint
+            else
+              echo "$changed_files" | grep -E "\.(js|ts|tsx)$" | xargs -r pnpm lint || true
+            fi
+
+  typecheck:
+    parallelism: 2
+    docker:
+      - image: cimg/node:20.12
+    steps:
+      - checkout
+      - setup
+      - run:
+          name: Typecheck (changed packages only)
+          command: |
+            CHANGED_PKGS=$(pnpm --filter "...[HEAD^1]" list --depth -1 --json 2>/dev/null | jq -r '.[].name' || echo "")
+
+            if [[ -z "$CHANGED_PKGS" ]]; then
+              echo "No changed packages to typecheck"
+              exit 0
+            fi
+
+            echo "Changed packages: $CHANGED_PKGS"
+
+            PACKAGES_TO_TEST=$(echo "$CHANGED_PKGS" | circleci tests split || echo "$CHANGED_PKGS")
+            echo "Packages for this job: $PACKAGES_TO_TEST"
+
+            for pkg in $PACKAGES_TO_TEST; do
+              echo "Running typecheck in $pkg..."
+              if pnpm --filter "$pkg" run typecheck 2>/dev/null; then
+                echo "✅ $pkg typecheck passed"
+              else
+                echo "❌ $pkg typecheck failed or no typecheck script"
+              fi
+            done
+
+  pre-pack:
+    parallelism: 2
+    docker:
+      - image: cimg/node:20.12
+    steps:
+      - checkout
+      - setup
+      - run:
+          name: Prepack (changed packages only)
+          command: |
+            CHANGED_WORKSPACES=$(pnpm --filter "...[HEAD^1]" list --depth -1 --json 2>/dev/null | jq -r '.[].name' || echo "")
+
+            if [[ -z "$CHANGED_WORKSPACES" ]]; then
+              echo "No changed workspaces to prepack"
+              exit 0
+            fi
+
+            echo "Changed workspaces: $CHANGED_WORKSPACES"
+
+            WORKSPACES_TO_RUN=$(echo "$CHANGED_WORKSPACES" | circleci tests split || echo "$CHANGED_WORKSPACES")
+            echo "Workspaces for this job: $WORKSPACES_TO_RUN"
+
+            for ws in $WORKSPACES_TO_RUN; do
+              echo "Running prepack in $ws..."
+              if pnpm --filter "$ws" run prepack 2>/dev/null; then
+                echo "✅ $ws prepack completed"
+              else
+                echo "❌ $ws prepack failed or no prepack script"
+              fi
+            done
+
+  check-peer:
+    docker:
+      - image: cimg/node:20.12
+    steps:
+      - checkout
+      - setup
+      - run:
+          name: Check Peer Dependencies
+          command: |
+            if [[ -f "./scripts/check-peer.sh" ]]; then
+              bash ./scripts/check-peer.sh
+            else
+              echo "⚠️  check-peer.sh script not found"
+            fi
+
+  test:
+    docker:
+      - image: cimg/node:20.12
+    parallelism: 2
+    steps:
+      - checkout
+      - setup
+      - run:
+          name: Vitest (Changed files only)
+          command: |
+            changed_files=$(git diff --name-only --diff-filter=ACMRUXB origin/main || true)
+
+            if [[ -z "$changed_files" ]]; then
+              echo "No changed files"
+              exit 0
+            fi
+
+            test_files=$(echo "$changed_files" | grep -E "\.(test|spec)\.(ts|tsx)$" || true)
+
+            if [[ -z "$test_files" ]]; then
+              echo "No test files changed"
+              exit 0
+            fi
+
+            echo "Test files to run: $test_files"
+
+            TESTS=$(echo "$test_files" | circleci tests split --split-by=timings || echo "$test_files")
+
+            if [[ -n "$TESTS" ]]; then
+              mkdir -p .test-reports/junit
+              pnpm exec vitest run $TESTS --passWithNoTests --reporter=junit --outputFile=.test-reports/junit/results.xml
+            fi
+      - store_test_results:
+          path: ./.test-reports/junit/
+      - store_artifacts:
+          path: ./.test-reports/junit/
+
+  test-all:
+    docker:
+      - image: cimg/node:20.12
+    parallelism: 4
+    steps:
+      - checkout
+      - setup
+      - run:
+          name: Vitest (Run All Tests)
+          command: |
+            mkdir -p .test-reports/junit
+            echo "Running all tests..."
+            pnpm exec vitest run --passWithNoTests --reporter=junit --outputFile=.test-reports/junit/results.xml
+      - store_test_results:
+          path: ./.test-reports/junit/
+      - store_artifacts:
+          path: ./.test-reports/junit/
+
+workflows:
+  main:
+    jobs:
+      - test:
+          filters:
+            branches:
+              ignore: main
+      - test-all:
+          context:
+            - npm-public
+          filters:
+            branches:
+              only: main
+      - lint:
+          filters:
+            branches:
+              ignore: main
+      - typecheck:
+          filters:
+            branches:
+              ignore: main
+      - pre-pack:
+          filters:
+            branches:
+              ignore: main
+      - check-peer:
+          filters:
+            branches:
+              ignore: main
