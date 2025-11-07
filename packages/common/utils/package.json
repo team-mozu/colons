@@ -1,0 +1,58 @@
+{
+  "name": "@mozu/utils",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/team-mozu/colons.git",
+    "directory": "packages/common/utils"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "require": "./src/index.ts",
+      "import": "./src/index.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "src/index.ts",
+  "files": [
+    "dist",
+    "esm"
+  ],
+  "scripts": {
+    "build": "colons",
+    "coverage": "colons",
+    "prepack": "colons",
+    "test": "colons",
+    "test:unit": "colons",
+    "typecheck": "colons"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.28.4"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.5",
+    "@babel/plugin-transform-class-properties": "^7.27.1",
+    "@babel/plugin-transform-nullish-coalescing-operator": "^7.27.1",
+    "@babel/plugin-transform-optional-chaining": "^7.28.5",
+    "@babel/preset-env": "^7.28.5",
+    "@babel/preset-typescript": "^7.28.5",
+    "colons": "file:../../../",
+    "typescript": "5.6.3"
+  },
+  "publishConfig": {
+    "access": "public",
+    "export": {
+      ".": {
+        "require": "./dist/index.js",
+        "import": "./esm/index.mjs",
+        "types": "./dist/index.d.ts"
+      },
+      "./package.json": "./package.json"
+    },
+    "import": "./esm/index.mjs",
+    "main": "./dist/index.js",
+    "module": "./esm/index.mjs",
+    "types": "./dist/index.d.ts"
+  }
+}
