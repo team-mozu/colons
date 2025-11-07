@@ -1,1 +1,13 @@
-node_modules/
+dist
+esm
+
+*.tsbuildinfo
+*.tgz
+*.map
+*.log
+*.DS_Store
+
+node_modules
+junit.xml
+*.mozudocs.md
+coverage
