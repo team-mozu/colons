@@ -10,17 +10,34 @@ commands:
     steps:
       - restore_cache:
           keys:
-            - node-modules-{{ checksum "pnpm-lock.yaml" }}
-            - node-modules-
+            - node-modules-v2-{{ checksum "pnpm-lock.yaml" }}
+            - node-modules-v2-
       - run:
-          name: Install pnpm
+          name: Setup pnpm
           command: |
-            corepack enable
-            pnpm install --frozen-lockfile
+            # Set custom pnpm path to avoid permission issues
+            export PNPM_HOME="$HOME/.local/share/pnpm"
+            export PATH="$PNPM_HOME:$PATH"
+            echo "export PNPM_HOME=\"$HOME/.local/share/pnpm\"" >> $BASH_ENV
+            echo "export PATH=\"\$PNPM_HOME:\$PATH\"" >> $BASH_ENV
+            
+            # Create pnpm directory
+            mkdir -p $PNPM_HOME
+            
+            # Install pnpm directly without corepack
+            curl -fsSL https://get.pnpm.io/install.sh | sh -
+            
+            # Verify installation
+            $PNPM_HOME/pnpm --version
+            
+            # Install dependencies
+            $PNPM_HOME/pnpm install --frozen-lockfile
       - save_cache:
-          key: node-modules-{{ checksum "pnpm-lock.yaml" }}
+          key: node-modules-v2-{{ checksum "pnpm-lock.yaml" }}
           paths:
             - node_modules
+            - packages/*/node_modules
+            - ~/.local/share/pnpm
             - ~/.pnpm-store
 
 jobs:
