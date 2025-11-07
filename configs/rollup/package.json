@@ -1,10 +1,19 @@
 {
   "name": "@mozu/rollup-config",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/team-mozu/colons.git",
     "directory": "configs/rollup"
+  },
+  "main": "./src/index.js",
+  "dependencies": {
+    "@babel/core": "^7.28.5",
+    "@rollup/plugin-babel": "^6.1.0",
+    "@rollup/plugin-commonjs": "^29.0.0",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "builtin-modules": "^5.0.0"
   },
   "devDependencies": {
     "rollup": "^4.52.5"
