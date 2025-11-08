@@ -20,12 +20,13 @@
     "esm"
   ],
   "scripts": {
-    "build": "colons",
-    "coverage": "colons",
-    "prepack": "colons",
-    "test": "colons",
-    "test:unit": "colons",
-    "typecheck": "colons"
+    "build": "pnpm clean && tsc -p tsconfig.build.json --emitDeclarationOnly --declarationDir dist && rollup -c rollup.config.js",
+    "coverage": "vitest run --coverage",
+    "prepack": "pnpm build",
+    "test": "vitest run && pnpm typecheck",
+    "test:unit": "vitest run",
+    "test:watch": "vitest watch",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@babel/runtime": "^7.28.4"
@@ -37,7 +38,14 @@
     "@babel/plugin-transform-optional-chaining": "^7.28.5",
     "@babel/preset-env": "^7.28.5",
     "@babel/preset-typescript": "^7.28.5",
+    "@mozu/rollup-config": "workspace:^0.1.0",
+    "@mozu/vitest": "workspace:^0.1.0",
+    "@rollup/plugin-babel": "^6.1.0",
+    "@rollup/plugin-commonjs": "^29.0.0",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
     "colons": "file:../../../",
+    "rollup": "^4.52.5",
     "typescript": "5.6.3"
   },
   "publishConfig": {
