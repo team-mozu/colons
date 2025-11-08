@@ -10,6 +10,18 @@
     "packages/**/**",
     "configs/*"
   ],
+  "scripts": {
+    "build": "pnpm -r build",
+    "clean": "pnpm -r clean",
+    "coverage": "vitest run --coverage",
+    "format": "prettier --write .",
+    "lint": "eslint . --ext .ts,.tsx",
+    "publish": "pnpm lerna publish from-git",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:watch": "vitest watch",
+    "version": "pnpm lerna version"
+  },
   "devDependencies": {
     "@babel/core": "^7.28.5",
     "@babel/plugin-transform-class-properties": "^7.27.1",
@@ -23,6 +35,9 @@
     "@types/node": "^24.10.0",
     "@typescript-eslint/eslint-plugin": "^8.46.3",
     "@typescript-eslint/parser": "^8.46.3",
+    "@vitest/coverage-istanbul": "^4.0.8",
+    "@vitest/coverage-v8": "^4.0.8",
+    "@vitest/eslint-plugin": "^1.4.1",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.31.0",
@@ -33,11 +48,13 @@
     "prettier": "^3.6.2",
     "sort-package-json": "^3.4.0",
     "ts-node": "^10.9.2",
-    "typescript": "5.6.3"
+    "typescript": "5.6.3",
+    "vitest": "^4.0.8"
   },
   "packageManager": "pnpm@9.5.0",
   "pnpm": {
     "overrides": {
+      "@mozu/vitest": "workspace:^",
       "documentation": "14.0.3",
       "esbuild": "npm:esbuild-wasm@0.25.12",
       "eslint": "^8.56.0",
@@ -47,7 +64,8 @@
       "eslint-plugin-prettier": "^4.2.1",
       "eslint-plugin-react": "^7.37.5",
       "eslint-plugin-react-hooks": "^4.6.0",
-      "typescript": "5.6.3"
+      "typescript": "5.6.3",
+      "vitest": "^4.0.8"
     }
   }
 }
