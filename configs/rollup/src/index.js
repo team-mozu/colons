@@ -5,7 +5,7 @@ const babel = require('@rollup/plugin-babel').default;
 const commonjs = require('@rollup/plugin-commonjs');
 const json = require('@rollup/plugin-json');
 const resolve = require('@rollup/plugin-node-resolve').default;
-const builtins = require('builtin-modules');
+const builtins = require('builtin-modules').default;
 
 exports.generateRollupConfig = function generateRollupConfig({ packageDir }) {
   const packageJSON = require(path.join(packageDir, 'package.json'));
@@ -22,7 +22,7 @@ exports.generateRollupConfig = function generateRollupConfig({ packageDir }) {
     const externals = [...dependencies, ...peerDependencies, ...builtins];
 
     return externals.some(externalPkg => {
-      return pkg.startWith(externalPkg);
+      return pkg.startsWith(externalPkg);
     });
   };
 
@@ -42,6 +42,7 @@ exports.generateRollupConfig = function generateRollupConfig({ packageDir }) {
                 dir: path.dirname(output),
                 entryFileNames: `[name]${path.extname(output)}`,
                 preserveModulesRoot: isESMFormat ? path.dirname(input) : undefined,
+                preserveModules: isESMFormat,
               }
             : { file: output }),
         },
@@ -55,10 +56,14 @@ exports.generateRollupConfig = function generateRollupConfig({ packageDir }) {
           extensions,
           babelHelpers: 'bundled',
           rootMode: 'upward',
+          exclude: 'node_modules/**',
+          presets: [
+            ['@babel/preset-env', { modules: false }],
+            '@babel/preset-typescript'
+          ]
         }),
         json(),
       ],
-      preserveModules: isESMFormat,
     };
   }
 

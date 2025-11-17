@@ -1,1 +1,0 @@
-moudle.export = { extends: '../../../babel.config.js' };
