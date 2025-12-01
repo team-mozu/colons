@@ -21,6 +21,7 @@
   ],
   "scripts": {
     "build": "pnpm clean && tsc -p tsconfig.build.json --emitDeclarationOnly --declarationDir dist && rollup -c rollup.config.js",
+    "clean": "rm -rf dist esm *.tsbuildinfo",
     "coverage": "vitest run --coverage",
     "prepack": "pnpm build",
     "test": "vitest run && pnpm typecheck",
@@ -50,7 +51,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "export": {
+    "exports": {
       ".": {
         "require": "./dist/index.js",
         "import": "./esm/index.mjs",
